@@ -3,15 +3,14 @@ package com.quarkus.training.controller;
 import com.quarkus.training.config.Logged;
 import com.quarkus.training.domain.Person;
 import com.quarkus.training.service.PersonService;
+import io.quarkus.panache.common.Page;
 import io.quarkus.security.Authenticated;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Path("/persons")
 @Authenticated
@@ -22,10 +21,9 @@ public class PersonController {
     PersonService personService;
 
     @GET
-    public Page<Person> getPersons(@DefaultValue("1") @QueryParam("page") int page,
+    public List<Person> getPersons(@DefaultValue("1") @QueryParam("page") int page,
                                    @DefaultValue("10") @QueryParam("size") int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return personService.getPersons(pageable);
+        return personService.getPersons(Page.of(page, size));
     }
 
     @Path("{id}")

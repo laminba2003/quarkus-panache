@@ -2,6 +2,7 @@ package com.quarkus.training.service;
 
 import com.quarkus.training.config.MessageSource;
 import com.quarkus.training.domain.Country;
+import com.quarkus.training.entity.CountryEntity;
 import com.quarkus.training.exception.EntityNotFoundException;
 import com.quarkus.training.exception.RequestException;
 import com.quarkus.training.mapping.CountryMapper;
@@ -11,7 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+
 
 @ApplicationScoped
 @AllArgsConstructor
@@ -24,7 +25,7 @@ public class CountryService {
     MessageSource messageSource;
 
     public List<Country> getCountries() {
-        return StreamSupport.stream(countryRepository.findAll().spliterator(), false)
+        return countryRepository.listAll().stream()
                 .map(countryMapper::toCountry)
                 .collect(Collectors.toList());
     }
@@ -40,25 +41,27 @@ public class CountryService {
                     throw new RequestException(messageSource.getMessage("country.exists", country.getName()),
                             Response.Status.CONFLICT);
                 });
-        return countryMapper.toCountry(countryRepository.save(countryMapper.fromCountry(country)));
+        CountryEntity countryEntity = countryMapper.fromCountry(country);
+        countryRepository.persist(countryEntity);
+        return countryMapper.toCountry(countryEntity);
     }
 
     public Country updateCountry(String name, Country country) {
         return countryRepository.findByNameIgnoreCase(name)
                 .map(entity -> {
                     country.setName(name);
-                    return countryMapper.toCountry(countryRepository.save(countryMapper.fromCountry(country)));
+                    CountryEntity countryEntity = countryMapper.fromCountry(country);
+                    countryRepository.persist(countryEntity);
+                    return countryMapper.toCountry(countryEntity);
                 }).orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage("country.notfound", name)));
     }
 
     public void deleteCountry(String name) {
-        if(countryRepository.existsById(name)) {
-            try {
-                countryRepository.deleteById(name);
-            } catch (Exception e) {
-                throw new RequestException(messageSource.getMessage("country.errordeletion", name),
-                        Response.Status.CONFLICT);
-            }
+        try {
+            countryRepository.deleteById(name);
+        } catch (Exception e) {
+            throw new RequestException(messageSource.getMessage("country.errordeletion", name),
+                    Response.Status.CONFLICT);
         }
     }
 

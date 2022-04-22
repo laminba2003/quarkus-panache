@@ -2,14 +2,16 @@ package com.quarkus.training.service;
 
 import com.quarkus.training.config.MessageSource;
 import com.quarkus.training.domain.Person;
+import com.quarkus.training.entity.PersonEntity;
 import com.quarkus.training.exception.EntityNotFoundException;
 import com.quarkus.training.mapping.PersonMapper;
 import com.quarkus.training.repository.CountryRepository;
 import com.quarkus.training.repository.PersonRepository;
+import io.quarkus.panache.common.Page;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import javax.enterprise.context.ApplicationScoped;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 @AllArgsConstructor
@@ -23,12 +25,12 @@ public class PersonService {
 
     MessageSource messageSource;
 
-    public Page<Person> getPersons(Pageable pageable) {
-        return personRepository.findAll(pageable).map(personMapper::toPerson);
+    public List<Person> getPersons(Page page) {
+        return personRepository.findAll(page).map(personMapper::toPerson).collect(Collectors.toList());
     }
 
     public Person getPerson(Long id) {
-        return personMapper.toPerson(personRepository.findById(id).orElseThrow(() ->
+        return personMapper.toPerson(personRepository.findByIdOptional(id).orElseThrow(() ->
                 new EntityNotFoundException(messageSource.getMessage("person.notfound", id))));
     }
 
@@ -36,23 +38,25 @@ public class PersonService {
         countryRepository.findByNameIgnoreCase(person.getCountry().getName()).orElseThrow(() ->
                 new EntityNotFoundException(messageSource.getMessage("country.notfound", person.getCountry().getName())));
         person.setId(null);
-        return personMapper.toPerson(personRepository.save(personMapper.fromPerson(person)));
+        PersonEntity personEntity = personMapper.fromPerson(person);
+        personRepository.persist(personEntity);
+        return personMapper.toPerson(personEntity);
     }
 
     public Person updatePerson(Long id, Person person) {
-        return personRepository.findById(id)
+        return personRepository.findByIdOptional(id)
                 .map(entity -> {
                     countryRepository.findByNameIgnoreCase(person.getCountry().getName()).orElseThrow(() ->
                             new EntityNotFoundException(messageSource.getMessage("country.notfound", person.getCountry().getName())));
                     person.setId(id);
-                    return personMapper.toPerson(personRepository.save(personMapper.fromPerson(person)));
+                    PersonEntity personEntity = personMapper.fromPerson(person);
+                    personRepository.persist(personEntity);
+                    return personMapper.toPerson(personEntity);
                 }).orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage("person.notfound", id)));
     }
 
     public void deletePerson(Long id) {
-        if(personRepository.existsById(id)) {
-            personRepository.deleteById(id);
-        }
+        personRepository.deleteById(id);
     }
 
 }

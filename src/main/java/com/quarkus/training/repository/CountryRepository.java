@@ -1,11 +1,15 @@
 package com.quarkus.training.repository;
 
 import com.quarkus.training.entity.CountryEntity;
-import org.springframework.data.repository.CrudRepository;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import javax.enterprise.context.ApplicationScoped;
 import java.util.Optional;
 
-public interface CountryRepository extends CrudRepository<CountryEntity, String> {
+@ApplicationScoped
+public class CountryRepository implements PanacheRepositoryBase<CountryEntity, String> {
 
-    Optional<CountryEntity> findByNameIgnoreCase(String name);
+    public Optional<CountryEntity> findByNameIgnoreCase(String name) {
+        return this.find("lower(name) =?1", name).firstResultOptional();
+    }
 
 }

@@ -37,10 +37,10 @@ class CountryServiceTest extends BaseTestClass {
     @Test
     void testGetCountries() {
         List<Country> countries = Collections.singletonList(getCountry());
-        given(countryRepository.findAll()).
+        given(countryRepository.listAll()).
                 willReturn(countries.stream().map(countryMapper::fromCountry).collect(Collectors.toList()));
         List<Country> result = countryService.getCountries();
-        verify(countryRepository).findAll();
+        verify(countryRepository).listAll();
         assertThat(result.size()).isEqualTo(countries.size());
         assertThat(result.get(0)).isEqualTo(countries.get(0));
     }
@@ -71,10 +71,8 @@ class CountryServiceTest extends BaseTestClass {
     void testCreateCountry() {
         // test country does not exists
         Country country = getCountry();
-        given(countryRepository.save(countryMapper.fromCountry(country))).
-                willReturn(countryMapper.fromCountry(country));
         Country result = countryService.createCountry(country);
-        verify(countryRepository).save(any(CountryEntity.class));
+        verify(countryRepository).persist(any(CountryEntity.class));
         assertThat(country).isEqualTo(result);
 
         // test country exists
@@ -92,10 +90,8 @@ class CountryServiceTest extends BaseTestClass {
         Country country = getCountry();
         given(countryRepository.findByNameIgnoreCase(country.getName()))
                 .willReturn(Optional.of(countryMapper.fromCountry(country)));
-        given(countryRepository.save(countryMapper.fromCountry(country))).
-                willReturn(countryMapper.fromCountry(country));
         Country result = countryService.updateCountry(country.getName(), country);
-        verify(countryRepository).save(any(CountryEntity.class));
+        verify(countryRepository).persist(any(CountryEntity.class));
         assertThat(country).isEqualTo(result);
 
         // test country does not exists
@@ -110,15 +106,11 @@ class CountryServiceTest extends BaseTestClass {
     void testDeleteCountry() {
         // test country can be deleted
         String name = getCountry().getName();
-        given(countryRepository.existsById(name)).
-                willReturn(true);
         countryService.deleteCountry(name);
         verify(countryRepository).deleteById(name);
 
         // test country cannot be deleted
         reset(countryRepository);
-        given(countryRepository.existsById(name)).
-                willReturn(true);
         doThrow(RuntimeException.class).when(countryRepository).deleteById(name);
         assertThatThrownBy(() -> countryService.deleteCountry(name))
                 .isInstanceOf(RequestException.class)

@@ -3,6 +3,7 @@ package com.quarkus.training.controller;
 import com.quarkus.training.BaseTestClass;
 import com.quarkus.training.domain.Person;
 import com.quarkus.training.service.PersonService;
+import io.quarkus.panache.common.Page;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.common.http.TestHTTPEndpoint;
 import io.quarkus.test.junit.QuarkusTest;
@@ -16,16 +17,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.restdocs.ManualRestDocumentation;
 import java.util.Collections;
 import java.util.List;
 import static javax.ws.rs.core.Response.Status.CREATED;
 import static javax.ws.rs.core.Response.Status.OK;
 import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.springframework.restdocs.restassured3.RestAssuredRestDocumentation.document;
@@ -59,9 +57,7 @@ class PersonControllerTest extends BaseTestClass {
     @Test
     void testGetPersons() {
         List<Person> persons = Collections.singletonList(getPerson());
-        Pageable pageable = PageRequest.of(1, 5);
-        Page<Person> page = new PageImpl<>(persons, pageable, persons.size());
-        given(personService.getPersons(pageable)).willReturn(page);
+        given(personService.getPersons(any(Page.class))).willReturn(persons);
         RestAssured.given(specification).auth().oauth2(getToken())
                 .queryParam("page", 1)
                 .queryParam("size", 5)
@@ -71,12 +67,12 @@ class PersonControllerTest extends BaseTestClass {
                 .then()
                 .contentType(ContentType.JSON)
                 .statusCode(OK.getStatusCode())
-                .body("content[0].id", equalTo((persons.get(0).getId().intValue())))
-                .body("content[0].firstName", equalTo(persons.get(0).getFirstName()))
-                .body("content[0].lastName", equalTo(persons.get(0).getLastName()))
-                .body("content[0].country.name", equalTo(persons.get(0).getCountry().getName()))
-                .body("content[0].country.capital", equalTo(persons.get(0).getCountry().getCapital()))
-                .body("content[0].country.population", equalTo(persons.get(0).getCountry().getPopulation()));
+                .body("id[0]", equalTo((persons.get(0).getId().intValue())))
+                .body("firstName[0]", equalTo(persons.get(0).getFirstName()))
+                .body("lastName[0]", equalTo(persons.get(0).getLastName()))
+                .body("country[0].name", equalTo(persons.get(0).getCountry().getName()))
+                .body("country[0].capital", equalTo(persons.get(0).getCountry().getCapital()))
+                .body("country[0].population", equalTo(persons.get(0).getCountry().getPopulation()));
     }
 
     @Test
