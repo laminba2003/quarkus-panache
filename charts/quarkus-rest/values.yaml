@@ -72,7 +72,7 @@ api:
       username: cm9vdA==
       password: cGFzc2Vy
     jwt:
-      auth: "http://keycloak/auth/realms/training"
+      auth: "http://keycloak:9092/auth/realms/training"
       jwk: "/protocol/openid-connect/certs"
 
 nodeSelector: {}
