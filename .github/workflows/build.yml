@@ -17,24 +17,5 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
           cache: maven
-      - name: Install graphviz
-        run: sudo apt install graphviz
       - name: Build with Maven
         run: mvn -B package
-      - name: Create Site Documentation
-        run: |
-          mkdir documentation && cp -RT target/generated-docs documentation
-          ls -l documentation
-      - name: Publish documentation to Netlify
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=documentation --prod
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      - name: Publish to Docker
-        run: |
-          mvn -B package -Dquarkus.container-image.push=true \
-            -Dquarkus.container-image.username=${{ secrets.DOCKER_USER }} \
-            -Dquarkus.container-image.password=${{ secrets.DOCKER_TOKEN }} \
-            -DskipTests

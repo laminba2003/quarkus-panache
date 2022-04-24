@@ -21,7 +21,7 @@ public class PersonController {
     PersonService personService;
 
     @GET
-    public List<Person> getPersons(@DefaultValue("1") @QueryParam("page") int page,
+    public List<Person> getPersons(@DefaultValue("0") @QueryParam("page") int page,
                                    @DefaultValue("10") @QueryParam("size") int size) {
         return personService.getPersons(Page.of(page, size));
     }

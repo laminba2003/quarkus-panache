@@ -9,6 +9,7 @@ import com.quarkus.training.mapping.CountryMapper;
 import com.quarkus.training.repository.CountryRepository;
 import lombok.AllArgsConstructor;
 import javax.enterprise.context.ApplicationScoped;
+import javax.transaction.Transactional;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ public class CountryService {
                 new EntityNotFoundException(messageSource.getMessage("country.notfound", name))));
     }
 
+    @Transactional
     public Country createCountry(Country country) {
         countryRepository.findByNameIgnoreCase(country.getName())
                 .ifPresent(entity -> {
@@ -46,6 +48,7 @@ public class CountryService {
         return countryMapper.toCountry(countryEntity);
     }
 
+    @Transactional
     public Country updateCountry(String name, Country country) {
         return countryRepository.findByNameIgnoreCase(name)
                 .map(entity -> {
@@ -56,6 +59,7 @@ public class CountryService {
                 }).orElseThrow(() -> new EntityNotFoundException(messageSource.getMessage("country.notfound", name)));
     }
 
+    @Transactional
     public void deleteCountry(String name) {
         try {
             countryRepository.deleteById(name);

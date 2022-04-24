@@ -4,6 +4,7 @@ import com.quarkus.training.BaseTestClass;
 import com.quarkus.training.domain.Person;
 import com.quarkus.training.entity.PersonEntity;
 import com.quarkus.training.exception.EntityNotFoundException;
+import com.quarkus.training.exception.RequestException;
 import com.quarkus.training.mapping.CountryMapper;
 import com.quarkus.training.mapping.PersonMapper;
 import com.quarkus.training.repository.CountryRepository;
@@ -13,6 +14,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.mockito.InjectMock;
 import org.junit.jupiter.api.Test;
 import javax.inject.Inject;
+import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 class PersonServiceTest extends BaseTestClass {
@@ -48,7 +49,7 @@ class PersonServiceTest extends BaseTestClass {
         List<Person> persons = Collections.singletonList(getPerson());
         Page page = Page.of(1, 5);
         List<PersonEntity> entities = persons.stream().map(personMapper::fromPerson).collect(Collectors.toList());
-        given(personRepository.findAll(page)).willReturn(entities.stream());
+        given(personRepository.findAll(page)).willReturn(entities);
         List<Person> result = personService.getPersons(page);
         verify(personRepository).findAll(page);
         assertThat(result.size()).isEqualTo(persons.size());
@@ -127,6 +128,13 @@ class PersonServiceTest extends BaseTestClass {
         Long id = 1L;
         personService.deletePerson(id);
         verify(personRepository).deleteById(id);
+
+        // test person cannot be deleted
+        doThrow(RuntimeException.class).when(personRepository).deleteById(id);
+        assertThatThrownBy(() -> personService.deletePerson(id))
+                .isInstanceOf(RequestException.class)
+                .hasMessageContaining(String.format("the person with id %s cannot be deleted", id))
+                .hasFieldOrPropertyWithValue("status", Response.Status.CONFLICT);
     }
 
 }
